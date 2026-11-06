@@ -327,6 +327,51 @@ button:active {
   transform: translateY(0) scale(0.97);
 }
 
+/* Кнопка «Придумать задачу» */
+
+.idea-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 14px;
+  font-size: 14px;
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px dashed rgba(79, 70, 229, 0.4);
+  box-shadow: none;
+}
+
+.idea-btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.idea-icon {
+  display: inline-block;
+}
+
+.idea-btn.rolling .idea-icon {
+  animation: diceRoll 0.6s ease-out;
+}
+
+@keyframes diceRoll {
+  0%   { transform: rotate(0) scale(1); }
+  50%  { transform: rotate(270deg) scale(1.4); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* :not(.removing) — чтобы подсветка не перебивала анимацию удаления */
+.task.idea:not(.removing) {
+  animation: slideIn 0.3s ease-out, ideaGlow 1.6s ease-out;
+}
+
+@keyframes ideaGlow {
+  0%   { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.6); }
+  40%  { box-shadow: 0 0 0 8px rgba(168, 85, 247, 0.25); }
+  100% { box-shadow: 0 2px 8px rgba(31, 16, 80, 0.06); }
+}
+
 /* Список задач */
 
 #task-list,

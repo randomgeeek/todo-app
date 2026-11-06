@@ -55,6 +55,7 @@ const translations = {
       'Сегодня твой день', 'Всё получится!', 'Не сдавайся!', 'Просто начни', 'Ты молодец'
     ],
     streakTitle: (n) => `${n} ${pluralRu(n, 'день', 'дня', 'дней')} подряд с выполненными задачами`,
+    ideaButton: 'Придумать задачу',
     habitsButton: 'Ежедневные задачи',
     habitsTitle: 'Ежедневные задачи',
     habitsHint: 'Отмечайте каждый день — у каждой задачи свой стрик. +15 XP за отметку.',
@@ -91,6 +92,7 @@ const translations = {
       'Today is your day', 'Keep going!', "Don't give up!", 'Just start', 'One thing at a time'
     ],
     streakTitle: (n) => `${n} ${n === 1 ? 'day' : 'days'} in a row with completed tasks`,
+    ideaButton: 'Suggest a task',
     habitsButton: 'Daily tasks',
     habitsTitle: 'Daily tasks',
     habitsHint: 'Check them off every day — each one has its own streak. +15 XP per check.',
@@ -574,6 +576,24 @@ loadTasks();
 loadStats();
 loadHabits();
 
+async function addTask(title, difficulty) {
+  const response = await fetch('/api/tasks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: title, difficulty: difficulty })
+  });
+
+  if (!response.ok) {
+    alert(t('addError'));
+    return null;
+  }
+
+  const li = renderTask(await response.json());
+  li.classList.add('appear');
+  updateSummary();
+  return li;
+}
+
 taskForm.addEventListener('submit', async (event) => {
   event.preventDefault();
 
@@ -583,22 +603,74 @@ taskForm.addEventListener('submit', async (event) => {
     return;
   }
 
-  const response = await fetch('/api/tasks', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title: title, difficulty: Number(difficultySelect.value) })
-  });
-
-  if (!response.ok) {
+  if (!(await addTask(title, Number(difficultySelect.value)))) {
     shakeInput(taskInput);
-    alert(t('addError'));
     return;
   }
 
-  const newTask = await response.json();
-  renderTask(newTask).classList.add('appear');
-  updateSummary();
-
   taskInput.value = '';
   taskInput.focus();
+});
+
+// Простые задачи, которые под силу каждому. Сложность влияет на XP.
+const taskIdeas = [
+  { difficulty: 1, ru: 'Выпить стакан воды', en: 'Drink a glass of water' },
+  { difficulty: 1, ru: 'Сделать 10 приседаний', en: 'Do 10 squats' },
+  { difficulty: 1, ru: 'Проветрить комнату', en: 'Air out the room' },
+  { difficulty: 1, ru: 'Написать другу «как дела?»', en: 'Text a friend “how are you?”' },
+  { difficulty: 1, ru: 'Убрать со стола всё лишнее', en: 'Clear everything extra off your desk' },
+  { difficulty: 1, ru: 'Потянуться 2 минуты', en: 'Stretch for 2 minutes' },
+  { difficulty: 1, ru: 'Записать 3 вещи, за которые я благодарен', en: 'Write down 3 things you’re grateful for' },
+  { difficulty: 1, ru: 'Полить цветы', en: 'Water the plants' },
+  { difficulty: 1, ru: 'Выбросить 5 ненужных вещей', en: 'Throw away 5 things you don’t need' },
+  { difficulty: 1, ru: 'Сделать 5 медленных глубоких вдохов', en: 'Take 5 slow, deep breaths' },
+  { difficulty: 1, ru: 'Удалить 20 старых фото с телефона', en: 'Delete 20 old photos from your phone' },
+  { difficulty: 1, ru: 'Заправить кровать', en: 'Make your bed' },
+  { difficulty: 1, ru: 'Отписаться от 3 ненужных рассылок', en: 'Unsubscribe from 3 newsletters' },
+  { difficulty: 1, ru: 'Послушать любимую песню и потанцевать', en: 'Play your favorite song and dance' },
+  { difficulty: 1, ru: 'Сделать кому-нибудь комплимент', en: 'Give someone a compliment' },
+  { difficulty: 1, ru: 'Выйти на улицу на 5 минут', en: 'Step outside for 5 minutes' },
+  { difficulty: 2, ru: 'Прогуляться 20 минут', en: 'Take a 20-minute walk' },
+  { difficulty: 2, ru: 'Прочитать 10 страниц книги', en: 'Read 10 pages of a book' },
+  { difficulty: 2, ru: 'Приготовить что-то, чего раньше не готовил', en: 'Cook something you’ve never made before' },
+  { difficulty: 2, ru: 'Разобрать один ящик', en: 'Tidy up one drawer' },
+  { difficulty: 2, ru: 'Выучить 5 слов на иностранном языке', en: 'Learn 5 words in a foreign language' },
+  { difficulty: 2, ru: 'Позвонить родным', en: 'Call your family' },
+  { difficulty: 2, ru: 'Провести час без телефона', en: 'Spend an hour without your phone' },
+  { difficulty: 2, ru: 'Сделать зарядку 15 минут', en: 'Do a 15-minute workout' },
+  { difficulty: 2, ru: 'Нарисовать что-нибудь, как получится', en: 'Draw something, however it turns out' },
+  { difficulty: 2, ru: 'Навести порядок на рабочем столе компьютера', en: 'Clean up your computer desktop' },
+  { difficulty: 2, ru: 'Написать план на завтра', en: 'Write a plan for tomorrow' },
+  { difficulty: 2, ru: 'Посмотреть короткую лекцию на новую тему', en: 'Watch a short lecture on a new topic' },
+  { difficulty: 2, ru: 'Протереть пыль во всей комнате', en: 'Dust the whole room' },
+  { difficulty: 3, ru: 'Пройти 10 000 шагов', en: 'Walk 10,000 steps' },
+  { difficulty: 3, ru: 'Сделать генеральную уборку в одной комнате', en: 'Deep-clean one room' },
+  { difficulty: 3, ru: 'Лечь спать до 23:00', en: 'Go to bed before 11 PM' },
+  { difficulty: 3, ru: 'Прожить день без сладкого', en: 'Go a whole day without sweets' },
+  { difficulty: 3, ru: 'Написать письмо себе через год', en: 'Write a letter to yourself a year from now' },
+  { difficulty: 3, ru: 'Разобрать шкаф и отложить вещи на отдачу', en: 'Sort your closet and set aside clothes to donate' },
+  { difficulty: 3, ru: 'Выучить короткое стихотворение наизусть', en: 'Learn a short poem by heart' },
+  { difficulty: 3, ru: 'Пройти быстрым шагом или пробежать 3 км', en: 'Walk briskly or run 3 km' },
+  { difficulty: 3, ru: 'Прочитать главу книги и пересказать её кому-нибудь', en: 'Read a chapter and retell it to someone' }
+];
+
+const ideaBtn = document.getElementById('idea-btn');
+
+ideaBtn.addEventListener('click', async () => {
+  // Не предлагаем то, что уже есть в списке.
+  const existing = new Set(
+    [...taskList.querySelectorAll('.task-title')].map((el) => el.textContent)
+  );
+  const fresh = taskIdeas.filter((idea) => !existing.has(idea.ru) && !existing.has(idea.en));
+  const idea = pick(fresh.length > 0 ? fresh : taskIdeas);
+
+  ideaBtn.disabled = true;
+  ideaBtn.classList.remove('rolling');
+  void ideaBtn.offsetWidth; // перезапуск анимации
+  ideaBtn.classList.add('rolling');
+
+  const li = await addTask(idea[lang], idea.difficulty);
+  if (li) li.classList.add('idea');
+
+  ideaBtn.disabled = false;
 });
