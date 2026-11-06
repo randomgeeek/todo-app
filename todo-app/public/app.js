@@ -2,7 +2,10 @@ const taskList = document.getElementById('task-list');
 const taskForm = document.getElementById('task-form');
 const taskInput = document.getElementById('task-input');
 const difficultySelect = document.getElementById('task-difficulty');
+const deadlineSelect = document.getElementById('task-deadline');
+const dueInput = document.getElementById('task-due');
 const levelLabel = document.getElementById('level-label');
+const levelNameEl = document.getElementById('level-name');
 const xpLabel = document.getElementById('xp-label');
 const xpFill = document.getElementById('xp-fill');
 const levelBadge = document.getElementById('level-badge');
@@ -56,6 +59,18 @@ const translations = {
     ],
     streakTitle: (n) => `${n} ${pluralRu(n, 'день', 'дня', 'дней')} подряд с выполненными задачами`,
     ideaButton: 'Придумать задачу',
+    levelNames: [
+      'Новичок', 'Ученик', 'Исполнитель', 'Деятель', 'Организатор',
+      'Мастер дел', 'Стратег', 'Гуру продуктивности', 'Чемпион', 'Легенда'
+    ],
+    deadline: 'Срок',
+    deadlineNone: 'Без срока',
+    deadlineDate: 'К дате',
+    dueLabel: 'Дедлайн',
+    dueToday: 'Сегодня',
+    dueTomorrow: 'Завтра',
+    dueTitle: (date) => `Дедлайн: ${date}`,
+    dueOverdueTitle: (date) => `Просрочено! Дедлайн был ${date}`,
     habitsButton: 'Ежедневные задачи',
     habitsTitle: 'Ежедневные задачи',
     habitsHint: 'Отмечайте каждый день — у каждой задачи свой стрик. +15 XP за отметку.',
@@ -93,6 +108,18 @@ const translations = {
     ],
     streakTitle: (n) => `${n} ${n === 1 ? 'day' : 'days'} in a row with completed tasks`,
     ideaButton: 'Suggest a task',
+    levelNames: [
+      'Newbie', 'Apprentice', 'Doer', 'Go-getter', 'Organizer',
+      'Task Master', 'Strategist', 'Productivity Guru', 'Champion', 'Legend'
+    ],
+    deadline: 'Deadline',
+    deadlineNone: 'No deadline',
+    deadlineDate: 'By date',
+    dueLabel: 'Due date',
+    dueToday: 'Today',
+    dueTomorrow: 'Tomorrow',
+    dueTitle: (date) => `Due: ${date}`,
+    dueOverdueTitle: (date) => `Overdue! It was due ${date}`,
     habitsButton: 'Daily tasks',
     habitsTitle: 'Daily tasks',
     habitsHint: 'Check them off every day — each one has its own streak. +15 XP per check.',
@@ -141,11 +168,45 @@ function levelFromXp(xp) {
   return { level, current: xp, need };
 }
 
+// После последнего названия уровень остаётся «Легендой».
+function levelName(level) {
+  const names = t('levelNames');
+  return names[Math.min(level, names.length) - 1];
+}
+
+// Сколько дней до дедлайна: 0 — сегодня, отрицательное — просрочено.
+function daysUntil(date) {
+  return Math.round((Date.parse(date) - Date.parse(today())) / 86400000);
+}
+
+function formatDate(date, options) {
+  return new Intl.DateTimeFormat(lang, { ...options, timeZone: 'UTC' }).format(new Date(date));
+}
+
+function updateDueBadge(badge) {
+  const due = badge.dataset.due;
+  const done = badge.closest('.task').classList.contains('done');
+  const days = daysUntil(due);
+  const fullDate = formatDate(due, { day: 'numeric', month: 'long', year: 'numeric' });
+
+  let text = `📅 ${formatDate(due, { day: 'numeric', month: 'short' })}`;
+  if (days === 0) text = `⏰ ${t('dueToday')}`;
+  if (days === 1) text = `📅 ${t('dueTomorrow')}`;
+
+  const overdue = days < 0 && !done;
+  badge.textContent = overdue ? `⚠️ ${formatDate(due, { day: 'numeric', month: 'short' })}` : text;
+  badge.title = overdue ? t('dueOverdueTitle')(fullDate) : t('dueTitle')(fullDate);
+  badge.classList.toggle('overdue', overdue);
+  badge.classList.toggle('today', !done && days === 0);
+  badge.classList.toggle('soon', !done && (days === 1 || days === 2));
+}
+
 function renderStats(xp) {
   currentXp = xp;
   const { level, current, need } = levelFromXp(xp);
   levelBadge.textContent = level;
   levelLabel.textContent = t('level')(level);
+  levelNameEl.textContent = levelName(level);
   xpLabel.textContent = `${current} / ${need} XP`;
   xpFill.style.width = (current / need) * 100 + '%';
 
@@ -247,6 +308,7 @@ function setLanguage(newLang) {
   });
 
   renderStats(currentXp);
+  document.querySelectorAll('.task-due').forEach(updateDueBadge);
   streakChip.title = t('streakTitle')(currentStreak);
   if (tasksLoaded) updateSummary();
   renderHabits();
@@ -269,7 +331,10 @@ function showXpGain(x, y, amount) {
 function showLevelUp(level) {
   const banner = document.createElement('div');
   banner.className = 'level-up';
-  banner.textContent = t('levelUp')(level);
+  const name = document.createElement('span');
+  name.className = 'level-up-name';
+  name.textContent = levelName(level);
+  banner.append(t('levelUp')(level), name);
   banner.addEventListener('animationend', () => banner.remove());
   effectsRoot().append(banner);
   launchConfetti(innerWidth / 2, innerHeight / 2);
@@ -395,6 +460,13 @@ function renderTask(task) {
   badge.className = `task-xp difficulty-${difficulty}`;
   badge.textContent = `${xpByDifficulty[difficulty]} XP`;
 
+  let dueBadge = null;
+  if (task.due_date) {
+    dueBadge = document.createElement('span');
+    dueBadge.className = 'task-due';
+    dueBadge.dataset.due = task.due_date;
+  }
+
   const deleteBtn = document.createElement('button');
   deleteBtn.className = 'delete-btn';
   deleteBtn.textContent = '✕';
@@ -415,6 +487,7 @@ function renderTask(task) {
     }
 
     li.classList.toggle('done', checkbox.checked);
+    if (dueBadge) updateDueBadge(dueBadge);
     updateSummary();
     celebrate(checkbox, await response.json(), true);
   });
@@ -436,7 +509,10 @@ function renderTask(task) {
     updateSummary();
   });
 
-  li.append(checkbox, title, badge, deleteBtn);
+  li.append(checkbox, title);
+  if (dueBadge) li.append(dueBadge);
+  li.append(badge, deleteBtn);
+  if (dueBadge) updateDueBadge(dueBadge); // нужен li: бейдж смотрит, выполнена ли задача
   taskList.append(li);
   return li;
 }
@@ -576,11 +652,11 @@ loadTasks();
 loadStats();
 loadHabits();
 
-async function addTask(title, difficulty) {
+async function addTask(title, difficulty, dueDate = null) {
   const response = await fetch('/api/tasks', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title: title, difficulty: difficulty })
+    body: JSON.stringify({ title: title, difficulty: difficulty, dueDate: dueDate })
   });
 
   if (!response.ok) {
@@ -603,13 +679,38 @@ taskForm.addEventListener('submit', async (event) => {
     return;
   }
 
-  if (!(await addTask(title, Number(difficultySelect.value)))) {
+  const withDeadline = deadlineSelect.value === 'date';
+  if (withDeadline && !dueInput.value) {
+    shakeInput(dueInput);
+    try {
+      dueInput.showPicker(); // открыть календарь, если браузер умеет
+    } catch {}
+    return;
+  }
+
+  const dueDate = withDeadline ? dueInput.value : null;
+  if (!(await addTask(title, Number(difficultySelect.value), dueDate))) {
     shakeInput(taskInput);
     return;
   }
 
   taskInput.value = '';
   taskInput.focus();
+});
+
+deadlineSelect.addEventListener('change', () => {
+  const withDeadline = deadlineSelect.value === 'date';
+  dueInput.hidden = !withDeadline;
+
+  if (withDeadline) {
+    dueInput.min = today();
+    if (!dueInput.value) {
+      // По умолчанию — завтра.
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      dueInput.valueAsDate = new Date(Date.UTC(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate()));
+    }
+  }
 });
 
 // Простые задачи, которые под силу каждому. Сложность влияет на XP.

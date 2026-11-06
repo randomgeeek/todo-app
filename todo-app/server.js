@@ -105,11 +105,20 @@ app.post('/api/tasks', (req, res) => {
   const difficulty = Number(req.body.difficulty);
   const safeDifficulty = XP_BY_DIFFICULTY[difficulty] ? difficulty : 1;
 
-  const result = db
-    .prepare('INSERT INTO tasks (title, difficulty) VALUES (?, ?)')
-    .run(title, safeDifficulty);
+  // Без даты (или с некорректной) задача бессрочная.
+  const dueDate = DATE_RE.test(req.body.dueDate) ? req.body.dueDate : null;
 
-  res.status(201).json({ id: result.lastInsertRowid, title: title, done: 0, difficulty: safeDifficulty });
+  const result = db
+    .prepare('INSERT INTO tasks (title, difficulty, due_date) VALUES (?, ?, ?)')
+    .run(title, safeDifficulty, dueDate);
+
+  res.status(201).json({
+    id: result.lastInsertRowid,
+    title: title,
+    done: 0,
+    difficulty: safeDifficulty,
+    due_date: dueDate
+  });
 });
 
 app.patch('/api/tasks/:id', (req, res) => {

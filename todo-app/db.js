@@ -14,6 +14,9 @@ const columns = db.prepare('PRAGMA table_info(tasks)').all();
 if (!columns.some((column) => column.name === 'difficulty')) {
   db.exec('ALTER TABLE tasks ADD COLUMN difficulty INTEGER NOT NULL DEFAULT 1');
 }
+if (!columns.some((column) => column.name === 'due_date')) {
+  db.exec('ALTER TABLE tasks ADD COLUMN due_date TEXT');
+}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS stats (

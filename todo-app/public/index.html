@@ -31,7 +31,10 @@
       <div id="level-badge" class="level-badge">1</div>
       <div class="player-info">
         <div class="player-head">
-          <span id="level-label" class="level-label">Уровень 1</span>
+          <span class="player-title">
+            <span id="level-label" class="level-label">Уровень 1</span>
+            <span id="level-name" class="level-name">Новичок</span>
+          </span>
           <span id="xp-label" class="xp-label">0 / 100 XP</span>
         </div>
         <div class="xp-bar">
@@ -53,6 +56,11 @@
         <option value="2" data-i18n="medium">Средне · 25 XP</option>
         <option value="3" data-i18n="hard">Сложно · 50 XP</option>
       </select>
+      <select id="task-deadline" aria-label="Срок" data-i18n-aria="deadline">
+        <option value="none" data-i18n="deadlineNone">Без срока</option>
+        <option value="date" data-i18n="deadlineDate">К дате</option>
+      </select>
+      <input id="task-due" type="date" aria-label="Дедлайн" data-i18n-aria="dueLabel" hidden>
       <button type="submit" data-i18n="add">Добавить</button>
     </form>
 
