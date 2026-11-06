@@ -38,11 +38,13 @@ body {
 
 #task-form {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 #task-input {
   flex: 1;
+  min-width: 160px;
   padding: 10px;
   font-size: 16px;
   border: 1px solid #ccc;
@@ -126,6 +128,100 @@ button:active {
   background: none;
   color: #c0392b;
   padding: 4px 8px;
+}
+
+.player {
+  margin-bottom: 16px;
+}
+
+.player-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.level-label {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.xp-label {
+  font-size: 14px;
+  color: #555;
+}
+
+.xp-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.xp-fill {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #fbbf24, #f472b6, var(--accent));
+  transition: width 0.5s ease;
+}
+
+#task-difficulty {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: white;
+}
+
+.task-xp {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.difficulty-1 { background: #d1fae5; color: #047857; }
+.difficulty-2 { background: #fef3c7; color: #b45309; }
+.difficulty-3 { background: #fee2e2; color: #b91c1c; }
+
+.xp-pop {
+  position: fixed;
+  z-index: 1001;
+  font-weight: 800;
+  font-size: 20px;
+  color: #fbbf24;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  animation: xpPop 1.2s ease-out forwards;
+}
+
+@keyframes xpPop {
+  from { opacity: 1; transform: translate(-50%, -50%); }
+  to   { opacity: 0; transform: translate(-50%, -250%); }
+}
+
+.level-up {
+  position: fixed;
+  left: 50%;
+  top: 40%;
+  z-index: 1001;
+  font-size: 5rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 30px #fbbf24, 0 6px 24px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: levelUp 2.5s ease-out forwards;
+}
+
+@keyframes levelUp {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-8deg); }
+  20%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(3deg); }
+  35%  { transform: translate(-50%, -50%) scale(1) rotate(0); }
+  80%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -80%) scale(1); }
 }
 
 .confetti {

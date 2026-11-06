@@ -15,6 +15,16 @@ app.get('/api/hello', (req, res) => {
   res.json({ message: 'Привет от сервера!' });
 });
 
+const XP_BY_DIFFICULTY = { 1: 10, 2: 25, 3: 50 };
+
+function getXp() {
+  return db.prepare('SELECT xp FROM stats WHERE id = 1').get().xp;
+}
+
+app.get('/api/stats', (req, res) => {
+  res.json({ xp: getXp() });
+});
+
 app.get('/api/tasks', (req, res) => {
   const tasks = db.prepare('SELECT * FROM tasks').all();
   res.json(tasks);
@@ -27,22 +37,37 @@ app.post('/api/tasks', (req, res) => {
     return res.status(400).json({ error: 'Текст задачи не может быть пустым' });
   }
 
-  const result = db.prepare('INSERT INTO tasks (title) VALUES (?)').run(title);
+  const difficulty = Number(req.body.difficulty);
+  const safeDifficulty = XP_BY_DIFFICULTY[difficulty] ? difficulty : 1;
 
-  res.status(201).json({ id: result.lastInsertRowid, title: title, done: 0 });
+  const result = db
+    .prepare('INSERT INTO tasks (title, difficulty) VALUES (?, ?)')
+    .run(title, safeDifficulty);
+
+  res.status(201).json({ id: result.lastInsertRowid, title: title, done: 0, difficulty: safeDifficulty });
 });
 
 app.patch('/api/tasks/:id', (req, res) => {
   const id = Number(req.params.id);
   const done = req.body.done ? 1 : 0;
 
-  const result = db.prepare('UPDATE tasks SET done = ? WHERE id = ?').run(done, id);
+  const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
 
-  if (result.changes === 0) {
+  if (!task) {
     return res.status(404).json({ error: 'Задача не найдена' });
   }
 
-  res.json({ id: id, done: done });
+  // Опыт меняется только при реальной смене статуса: повторный PATCH ничего не даёт,
+  // а снятая галочка забирает опыт обратно.
+  let gained = 0;
+  if (task.done !== done) {
+    db.prepare('UPDATE tasks SET done = ? WHERE id = ?').run(done, id);
+    const xp = XP_BY_DIFFICULTY[task.difficulty] || XP_BY_DIFFICULTY[1];
+    gained = done ? xp : -xp;
+    db.prepare('UPDATE stats SET xp = MAX(0, xp + ?) WHERE id = 1').run(gained);
+  }
+
+  res.json({ id: id, done: done, gained: gained, xp: getXp() });
 });
 
 app.delete('/api/tasks/:id', (req, res) => {

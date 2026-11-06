@@ -10,8 +10,23 @@
   <main class="container">
     <h1>Список задач</h1>
 
+    <section class="player">
+      <div class="player-head">
+        <span id="level-label" class="level-label">Уровень 1</span>
+        <span id="xp-label" class="xp-label">0 / 100 XP</span>
+      </div>
+      <div class="xp-bar">
+        <div id="xp-fill" class="xp-fill"></div>
+      </div>
+    </section>
+
     <form id="task-form">
       <input id="task-input" type="text" placeholder="Что нужно сделать?">
+      <select id="task-difficulty" aria-label="Сложность">
+        <option value="1">Легко · 10 XP</option>
+        <option value="2">Средне · 25 XP</option>
+        <option value="3">Сложно · 50 XP</option>
+      </select>
       <button type="submit">Добавить</button>
     </form>
 
