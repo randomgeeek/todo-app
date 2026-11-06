@@ -6,7 +6,7 @@
   <title>Список задач</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Caveat:wght@700&family=Comfortaa:wght@700&family=Lobster&family=Marck+Script&family=Pacifico&family=Press+Start+2P&family=Russo+One&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,8 +17,14 @@
 
   <main class="container">
     <header class="header">
-      <h1 data-i18n="heading">Список задач</h1>
-      <p id="summary" class="summary" data-i18n="loading">Загрузка…</p>
+      <div class="header-text">
+        <h1 data-i18n="heading">Список задач</h1>
+        <p id="summary" class="summary" data-i18n="loading">Загрузка…</p>
+      </div>
+      <div id="streak-chip" class="streak-chip cold">
+        <span class="streak-fire">🔥</span>
+        <span id="streak-count">0</span>
+      </div>
     </header>
 
     <section class="player">
@@ -34,6 +40,12 @@
       </div>
     </section>
 
+    <button type="button" id="habits-open" class="habits-open">
+      <span class="habits-open-icon">🔁</span>
+      <span class="habits-open-text" data-i18n="habitsButton">Ежедневные задачи</span>
+      <span id="habits-progress" class="habits-progress">0/0</span>
+    </button>
+
     <form id="task-form">
       <input id="task-input" type="text" placeholder="Что нужно сделать?" data-i18n-placeholder="placeholder" autocomplete="off">
       <select id="task-difficulty" aria-label="Сложность" data-i18n-aria="difficulty">
@@ -47,6 +59,24 @@
     <ul id="task-list"></ul>
     <p id="empty-state" class="empty-state" data-i18n="empty" hidden>Задач пока нет — добавьте первую ✨</p>
   </main>
+
+  <dialog id="habits-dialog" class="habits-dialog">
+    <div class="dialog-body">
+      <div class="dialog-head">
+        <h2 data-i18n="habitsTitle">Ежедневные задачи</h2>
+        <button type="button" id="habits-close" class="icon-btn" data-i18n-aria="close" aria-label="Закрыть">✕</button>
+      </div>
+      <p class="dialog-hint" data-i18n="habitsHint">Отмечайте каждый день — у каждой задачи свой стрик. +15 XP за отметку.</p>
+
+      <form id="habit-form">
+        <input id="habit-input" type="text" placeholder="Например: зарядка" data-i18n-placeholder="habitPlaceholder" autocomplete="off">
+        <button type="submit" data-i18n="add">Добавить</button>
+      </form>
+
+      <ul id="habit-list"></ul>
+      <p id="habits-empty" class="empty-state" data-i18n="habitsEmpty" hidden>Пока пусто — добавьте первую ежедневную задачу</p>
+    </div>
+  </dialog>
 <script src="app.js"></script>
 </body>
 </html>
