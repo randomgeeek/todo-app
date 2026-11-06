@@ -21,6 +21,8 @@ const habitForm = document.getElementById('habit-form');
 const habitInput = document.getElementById('habit-input');
 const habitList = document.getElementById('habit-list');
 const habitsEmpty = document.getElementById('habits-empty');
+const challengeList = document.getElementById('challenge-list');
+const challengesCount = document.getElementById('challenges-count');
 
 function pluralRu(n, one, few, many) {
   const mod10 = n % 10;
@@ -59,6 +61,18 @@ const translations = {
     ],
     streakTitle: (n) => `${n} ${pluralRu(n, 'день', 'дня', 'дней')} подряд с выполненными задачами`,
     ideaButton: 'Придумать задачу',
+    challengesTitle: 'Челленджи дня',
+    challengeDone: 'Челлендж выполнен!',
+    challenges: {
+      tasks3: (n) => `Закрыть ${n} ${pluralRu(n, 'задачу', 'задачи', 'задач')}`,
+      tasks5: (n) => `Закрыть ${n} ${pluralRu(n, 'задачу', 'задачи', 'задач')}`,
+      hard1: () => 'Закрыть сложную задачу',
+      medium2: (n) => `Закрыть ${n} ${pluralRu(n, 'задачу', 'задачи', 'задач')} средней или высокой сложности`,
+      habits2: (n) => `Отметить ${n} ${pluralRu(n, 'ежедневную задачу', 'ежедневные задачи', 'ежедневных задач')}`,
+      habitsAll: () => 'Отметить все ежедневные задачи',
+      xp80: (n) => `Заработать ${n} XP за день`,
+      xp150: (n) => `Заработать ${n} XP за день`
+    },
     levelNames: [
       'Новичок', 'Ученик', 'Исполнитель', 'Деятель', 'Организатор',
       'Мастер дел', 'Стратег', 'Гуру продуктивности', 'Чемпион', 'Легенда'
@@ -108,6 +122,18 @@ const translations = {
     ],
     streakTitle: (n) => `${n} ${n === 1 ? 'day' : 'days'} in a row with completed tasks`,
     ideaButton: 'Suggest a task',
+    challengesTitle: 'Daily challenges',
+    challengeDone: 'Challenge complete!',
+    challenges: {
+      tasks3: (n) => `Complete ${n} tasks`,
+      tasks5: (n) => `Complete ${n} tasks`,
+      hard1: () => 'Complete a hard task',
+      medium2: (n) => `Complete ${n} medium or hard tasks`,
+      habits2: (n) => `Check off ${n} daily tasks`,
+      habitsAll: () => 'Check off all daily tasks',
+      xp80: (n) => `Earn ${n} XP today`,
+      xp150: (n) => `Earn ${n} XP today`
+    },
     levelNames: [
       'Newbie', 'Apprentice', 'Doer', 'Go-getter', 'Organizer',
       'Task Master', 'Strategist', 'Productivity Guru', 'Champion', 'Legend'
@@ -155,6 +181,9 @@ let currentLevel = 1;
 let currentXp = 0;
 let currentStreak = 0;
 let habits = [];
+let challenges = [];
+
+const challengeIcons = { tasks3: '✅', tasks5: '✅', hard1: '💪', medium2: '⚡', habits2: '🔁', habitsAll: '🔁', xp80: '⭐', xp150: '⭐' };
 
 // Чтобы перейти с уровня N на N + 1, нужно N * 100 опыта.
 function levelFromXp(xp) {
@@ -238,10 +267,91 @@ async function loadStats() {
   renderStreak(stats.streak);
 }
 
-// Ответ сервера на отметку задачи или ежедневки: обновляем опыт и стрик и празднуем.
+function challengeText(challenge) {
+  const text = t('challenges')[challenge.id];
+  return text ? text(challenge.target) : challenge.id;
+}
+
+function renderChallenges() {
+  challengeList.innerHTML = '';
+
+  for (const challenge of challenges) {
+    const li = document.createElement('li');
+    li.className = 'challenge';
+    li.classList.toggle('done', challenge.done);
+
+    const icon = document.createElement('span');
+    icon.className = 'challenge-icon';
+    icon.textContent = challenge.done ? '🏆' : challengeIcons[challenge.id] || '🎯';
+
+    const text = document.createElement('span');
+    text.className = 'challenge-text';
+    text.textContent = challengeText(challenge);
+
+    const reward = document.createElement('span');
+    reward.className = 'challenge-reward';
+    reward.textContent = challenge.done
+      ? `✓ +${challenge.reward} XP`
+      : `${challenge.current}/${challenge.target} · +${challenge.reward} XP`;
+
+    const bar = document.createElement('div');
+    bar.className = 'challenge-bar';
+    const fill = document.createElement('div');
+    fill.className = 'challenge-fill';
+    fill.style.width = (challenge.done ? 100 : (challenge.current / challenge.target) * 100) + '%';
+    bar.append(fill);
+
+    li.append(icon, text, reward, bar);
+    challengeList.append(li);
+  }
+
+  const done = challenges.filter((challenge) => challenge.done).length;
+  challengesCount.textContent = `${done}/${challenges.length}`;
+  challengesCount.classList.toggle('complete', challenges.length > 0 && done === challenges.length);
+}
+
+async function loadChallenges() {
+  const response = await fetch(`/api/challenges?today=${today()}`);
+  challenges = await response.json();
+  renderChallenges();
+}
+
+function showChallengeDone(challenge) {
+  const toast = document.createElement('div');
+  toast.className = 'challenge-toast';
+
+  const icon = document.createElement('span');
+  icon.className = 'challenge-toast-icon';
+  icon.textContent = '🏆';
+
+  const body = document.createElement('div');
+  const title = document.createElement('div');
+  title.className = 'challenge-toast-title';
+  title.textContent = `${t('challengeDone')} +${challenge.reward} XP`;
+  const text = document.createElement('div');
+  text.className = 'challenge-toast-text';
+  text.textContent = challengeText(challenge);
+  body.append(title, text);
+
+  toast.append(icon, body);
+  toast.addEventListener('animationend', () => toast.remove());
+  effectsRoot().append(toast);
+  launchConfetti(innerWidth / 2, 40);
+}
+
+// Ответ сервера на отметку задачи или ежедневки: обновляем опыт, стрик и челленджи и празднуем.
 function celebrate(checkbox, result, withPraise) {
   const leveledUp = renderStats(result.xp);
   renderStreak(result.streak);
+
+  if (result.challenges) {
+    challenges = result.challenges;
+    renderChallenges();
+  }
+  // Если выполнено сразу несколько, показываем уведомления по очереди.
+  (result.completedChallenges || []).forEach((challenge, i) => {
+    setTimeout(() => showChallengeDone(challenge), 400 + i * 1200);
+  });
 
   if (result.gained <= 0) return;
 
@@ -312,6 +422,7 @@ function setLanguage(newLang) {
   streakChip.title = t('streakTitle')(currentStreak);
   if (tasksLoaded) updateSummary();
   renderHabits();
+  renderChallenges();
 }
 
 document.querySelectorAll('.lang-btn').forEach((btn) => {
@@ -595,6 +706,7 @@ function renderHabit(habit) {
 
     habits = habits.filter((item) => item.id !== habit.id);
     renderHabits();
+    loadChallenges(); // цель «отметить все ежедневки» зависит от их числа
   });
 
   li.append(checkbox, title, streak, deleteBtn);
@@ -642,6 +754,7 @@ habitForm.addEventListener('submit', async (event) => {
 
   habits.push(await response.json());
   renderHabits();
+  loadChallenges();
 
   habitInput.value = '';
   habitInput.focus();
@@ -651,6 +764,7 @@ setLanguage(lang);
 loadTasks();
 loadStats();
 loadHabits();
+loadChallenges();
 
 async function addTask(title, difficulty, dueDate = null) {
   const response = await fetch('/api/tasks', {
