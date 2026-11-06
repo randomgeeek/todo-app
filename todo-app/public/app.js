@@ -5,9 +5,73 @@ const difficultySelect = document.getElementById('task-difficulty');
 const levelLabel = document.getElementById('level-label');
 const xpLabel = document.getElementById('xp-label');
 const xpFill = document.getElementById('xp-fill');
+const levelBadge = document.getElementById('level-badge');
+const summaryEl = document.getElementById('summary');
+const emptyState = document.getElementById('empty-state');
+
+const translations = {
+  ru: {
+    pageTitle: 'Список задач',
+    heading: 'Список задач',
+    loading: 'Загрузка…',
+    placeholder: 'Что нужно сделать?',
+    difficulty: 'Сложность',
+    easy: 'Легко · 10 XP',
+    medium: 'Средне · 25 XP',
+    hard: 'Сложно · 50 XP',
+    add: 'Добавить',
+    empty: 'Задач пока нет — добавьте первую ✨',
+    level: (n) => `Уровень ${n}`,
+    levelUp: (n) => `Уровень ${n}!`,
+    summaryEmpty: 'Список пуст',
+    summaryAll: (total) => `Все ${total} выполнены — красота! 🎉`,
+    summary: (done, total) => `Выполнено ${done} из ${total}`,
+    deleteTitle: 'Удалить',
+    deleteLabel: 'Удалить задачу',
+    addError: 'Не удалось добавить задачу',
+    updateError: 'Не удалось обновить задачу',
+    deleteError: 'Не удалось удалить задачу',
+    praise: ['Отлично!', 'Так держать!', 'Супер!', 'Молодец!']
+  },
+  en: {
+    pageTitle: 'Task list',
+    heading: 'Task list',
+    loading: 'Loading…',
+    placeholder: 'What needs to be done?',
+    difficulty: 'Difficulty',
+    easy: 'Easy · 10 XP',
+    medium: 'Medium · 25 XP',
+    hard: 'Hard · 50 XP',
+    add: 'Add',
+    empty: 'No tasks yet — add your first one ✨',
+    level: (n) => `Level ${n}`,
+    levelUp: (n) => `Level ${n}!`,
+    summaryEmpty: 'The list is empty',
+    summaryAll: (total) => `All ${total} done — awesome! 🎉`,
+    summary: (done, total) => `Completed ${done} of ${total}`,
+    deleteTitle: 'Delete',
+    deleteLabel: 'Delete task',
+    addError: "Couldn't add the task",
+    updateError: "Couldn't update the task",
+    deleteError: "Couldn't delete the task",
+    praise: ['Nice!', 'Well Done!', 'Great job!', 'Keep it up!']
+  }
+};
+
+function detectLanguage() {
+  try {
+    const saved = localStorage.getItem('lang');
+    if (translations[saved]) return saved;
+  } catch {}
+  return navigator.language.startsWith('ru') ? 'ru' : 'en';
+}
+
+let lang = detectLanguage();
+const t = (key) => translations[lang][key];
 
 const xpByDifficulty = { 1: 10, 2: 25, 3: 50 };
 let currentLevel = 1;
+let currentXp = 0;
 
 // Чтобы перейти с уровня N на N + 1, нужно N * 100 опыта.
 function levelFromXp(xp) {
@@ -22,8 +86,10 @@ function levelFromXp(xp) {
 }
 
 function renderStats(xp) {
+  currentXp = xp;
   const { level, current, need } = levelFromXp(xp);
-  levelLabel.textContent = `Уровень ${level}`;
+  levelBadge.textContent = level;
+  levelLabel.textContent = t('level')(level);
   xpLabel.textContent = `${current} / ${need} XP`;
   xpFill.style.width = (current / need) * 100 + '%';
 
@@ -39,6 +105,57 @@ async function loadStats() {
   renderStats(stats.xp);
 }
 
+function updateSummary() {
+  const total = taskList.querySelectorAll('.task:not(.removing)').length;
+  const done = taskList.querySelectorAll('.task.done:not(.removing)').length;
+
+  emptyState.hidden = total > 0;
+  if (total === 0) {
+    summaryEl.textContent = t('summaryEmpty');
+  } else if (done === total) {
+    summaryEl.textContent = t('summaryAll')(total);
+  } else {
+    summaryEl.textContent = t('summary')(done, total);
+  }
+}
+
+let tasksLoaded = false;
+
+function setLanguage(newLang) {
+  lang = newLang;
+  try {
+    localStorage.setItem('lang', lang);
+  } catch {}
+
+  document.documentElement.lang = lang;
+  document.title = t('pageTitle');
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
+    el.setAttribute('aria-label', t(el.dataset.i18nAria));
+  });
+  document.querySelectorAll('.delete-btn').forEach((btn) => {
+    btn.title = t('deleteTitle');
+    btn.setAttribute('aria-label', t('deleteLabel'));
+  });
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
+    const active = btn.dataset.lang === lang;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active);
+  });
+
+  renderStats(currentXp);
+  if (tasksLoaded) updateSummary();
+}
+
+document.querySelectorAll('.lang-btn').forEach((btn) => {
+  btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
+});
+
 function showXpGain(x, y, amount) {
   const pop = document.createElement('div');
   pop.className = 'xp-pop';
@@ -52,14 +169,13 @@ function showXpGain(x, y, amount) {
 function showLevelUp(level) {
   const banner = document.createElement('div');
   banner.className = 'level-up';
-  banner.textContent = `Уровень ${level}!`;
+  banner.textContent = t('levelUp')(level);
   banner.addEventListener('animationend', () => banner.remove());
   document.body.append(banner);
   launchConfetti(innerWidth / 2, innerHeight / 2);
 }
 
 const confettiColors = ['#f87171', '#fbbf24', '#34d399', '#60a5fa', '#a78bfa', '#f472b6'];
-const praiseWords = ['Nice!', 'Well Done!', 'Great job!', 'Отлично!', 'Так держать!'];
 
 function launchConfetti(x, y) {
   for (let i = 0; i < 80; i++) {
@@ -80,6 +196,7 @@ function launchConfetti(x, y) {
 function showPraise() {
   const word = document.createElement('div');
   word.className = 'praise';
+  const praiseWords = t('praise');
   word.textContent = praiseWords[Math.floor(Math.random() * praiseWords.length)];
   word.style.left = 20 + Math.random() * 60 + '%';
   word.style.top = 20 + Math.random() * 60 + '%';
@@ -115,6 +232,8 @@ function renderTask(task) {
   const deleteBtn = document.createElement('button');
   deleteBtn.className = 'delete-btn';
   deleteBtn.textContent = '✕';
+  deleteBtn.title = t('deleteTitle');
+  deleteBtn.setAttribute('aria-label', t('deleteLabel'));
 
   checkbox.addEventListener('change', async () => {
     const response = await fetch(`/api/tasks/${task.id}`, {
@@ -124,12 +243,13 @@ function renderTask(task) {
     });
 
     if (!response.ok) {
-      alert('Не удалось обновить задачу');
+      alert(t('updateError'));
       checkbox.checked = !checkbox.checked;
       return;
     }
 
     li.classList.toggle('done', checkbox.checked);
+    updateSummary();
 
     const result = await response.json();
     const leveledUp = renderStats(result.xp);
@@ -155,13 +275,15 @@ function renderTask(task) {
       const response = await fetch(`/api/tasks/${task.id}`, { method: 'DELETE' });
 
       if (!response.ok && response.status !== 404) {
-        alert('Не удалось удалить задачу');
+        alert(t('deleteError'));
         li.classList.remove('removing');
+        updateSummary();
         return;
       }
 
       li.remove();
     }, { once: true });
+    updateSummary();
   });
 
   li.append(checkbox, title, badge, deleteBtn);
@@ -175,8 +297,11 @@ async function loadTasks() {
 
   taskList.innerHTML = '';
   tasks.forEach((task) => renderTask(task));
+  tasksLoaded = true;
+  updateSummary();
 }
 
+setLanguage(lang);
 loadTasks();
 loadStats();
 
@@ -197,12 +322,13 @@ taskForm.addEventListener('submit', async (event) => {
 
   if (!response.ok) {
     shakeInput();
-    alert('Не удалось добавить задачу');
+    alert(t('addError'));
     return;
   }
 
   const newTask = await response.json();
   renderTask(newTask).classList.add('appear');
+  updateSummary();
 
   taskInput.value = '';
   taskInput.focus();

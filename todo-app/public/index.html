@@ -4,36 +4,49 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Список задач</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="lang-switch" role="group" aria-label="Language">
+    <button type="button" class="lang-btn" data-lang="ru">RU</button>
+    <button type="button" class="lang-btn" data-lang="en">EN</button>
+  </div>
+
   <main class="container">
-    <h1>Список задач</h1>
+    <header class="header">
+      <h1 data-i18n="heading">Список задач</h1>
+      <p id="summary" class="summary" data-i18n="loading">Загрузка…</p>
+    </header>
 
     <section class="player">
-      <div class="player-head">
-        <span id="level-label" class="level-label">Уровень 1</span>
-        <span id="xp-label" class="xp-label">0 / 100 XP</span>
-      </div>
-      <div class="xp-bar">
-        <div id="xp-fill" class="xp-fill"></div>
+      <div id="level-badge" class="level-badge">1</div>
+      <div class="player-info">
+        <div class="player-head">
+          <span id="level-label" class="level-label">Уровень 1</span>
+          <span id="xp-label" class="xp-label">0 / 100 XP</span>
+        </div>
+        <div class="xp-bar">
+          <div id="xp-fill" class="xp-fill"></div>
+        </div>
       </div>
     </section>
 
     <form id="task-form">
-      <input id="task-input" type="text" placeholder="Что нужно сделать?">
-      <select id="task-difficulty" aria-label="Сложность">
-        <option value="1">Легко · 10 XP</option>
-        <option value="2">Средне · 25 XP</option>
-        <option value="3">Сложно · 50 XP</option>
+      <input id="task-input" type="text" placeholder="Что нужно сделать?" data-i18n-placeholder="placeholder" autocomplete="off">
+      <select id="task-difficulty" aria-label="Сложность" data-i18n-aria="difficulty">
+        <option value="1" data-i18n="easy">Легко · 10 XP</option>
+        <option value="2" data-i18n="medium">Средне · 25 XP</option>
+        <option value="3" data-i18n="hard">Сложно · 50 XP</option>
       </select>
-      <button type="submit">Добавить</button>
+      <button type="submit" data-i18n="add">Добавить</button>
     </form>
 
-    <ul id="task-list">
-     
-    </ul>
+    <ul id="task-list"></ul>
+    <p id="empty-state" class="empty-state" data-i18n="empty" hidden>Задач пока нет — добавьте первую ✨</p>
   </main>
-<script src="app.js"></script>  
+<script src="app.js"></script>
 </body>
 </html>
