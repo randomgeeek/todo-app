@@ -3,7 +3,7 @@
   --color-2: #764ba2;
   --color-3: #f093fb;
   --accent: #4f46e5;
-  --card-bg: rgba(255, 255, 255, 0.8);
+  --card-bg: rgba(255, 255, 255, 0.5);
 }
 * {
   box-sizing: border-box;
@@ -16,14 +16,17 @@ body {
   background: linear-gradient(135deg, var(--color-1), var(--color-2), var(--color-3));
   background-size: 300% 300%;
   animation: gradientMove 15s ease infinite;
-  @keyframes gradientMove {
+}
+
+@keyframes gradientMove {
   0%   { background-position: 0% 50%; }
   50%  { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
-}
 
 .container {
+  position: relative;
+  z-index: 1;
   max-width: 480px;
   margin: 40px auto;
   padding: 24px;
@@ -46,6 +49,17 @@ body {
   border-radius: 8px;
 }
 
+#task-input.shake {
+  animation: shake 0.3s ease;
+  border-color: #ef4444;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-6px); }
+  75%      { transform: translateX(6px); }
+}
+
 button {
   padding: 10px 16px;
   font-size: 16px;
@@ -54,6 +68,16 @@ button {
   background: var(--accent);
   color: white;
   cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+button:active {
+  transform: translateY(0) scale(0.97);
 }
 
 #task-list {
@@ -70,17 +94,84 @@ button {
   border-bottom: 1px solid #eee;
 }
 
+.task.appear {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.task.removing {
+  animation: slideOut 0.25s ease-in forwards;
+}
+
+@keyframes slideOut {
+  to { opacity: 0; transform: translateX(40px); }
+}
+
 .task-title {
   flex: 1;
+  transition: color 0.3s ease, opacity 0.3s ease;
 }
 
 .task.done .task-title {
   text-decoration: line-through;
   color: #999;
+  opacity: 0.6;
 }
 
 .delete-btn {
   background: none;
   color: #c0392b;
   padding: 4px 8px;
+}
+
+.confetti {
+  position: fixed;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 1000;
+  animation-name: confettiFall;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes confettiFall {
+  25% {
+    transform: translate(var(--dx), var(--rise)) rotate(240deg);
+  }
+  to {
+    transform: translate(calc(var(--dx) * 1.5), 110vh) rotate(720deg);
+    opacity: 0.7;
+  }
+}
+
+.praise {
+  position: fixed;
+  z-index: 0;
+  font-size: 4rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: praiseFade 2.5s ease-out forwards;
+}
+
+@keyframes praiseFade {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  20%  { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -70%) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
